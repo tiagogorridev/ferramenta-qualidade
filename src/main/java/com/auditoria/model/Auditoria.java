@@ -1,5 +1,6 @@
 package com.auditoria.model;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -35,6 +36,7 @@ public class Auditoria {
     
     private Integer respostasNaoAplicaveis;
 
+    @JsonManagedReference
     @OneToMany(mappedBy = "auditoria", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<RespostaChecklist> respostas = new ArrayList<>();
 

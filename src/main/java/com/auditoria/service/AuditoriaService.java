@@ -1,6 +1,7 @@
 package com.auditoria.service;
 
 import com.auditoria.model.*;
+import com.auditoria.model.enums.ClassificacaoNC;
 import com.auditoria.repository.AuditoriaRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -9,9 +10,11 @@ import java.util.List;
 @Service
 public class AuditoriaService {
     private final AuditoriaRepository repository;
+    private final NaoConformidadeService naoConformidadeService;
 
-    public AuditoriaService(AuditoriaRepository repository) {
+    public AuditoriaService(AuditoriaRepository repository, NaoConformidadeService naoConformidadeService) {
         this.repository = repository;
+        this.naoConformidadeService = naoConformidadeService;
     }
 
     @Transactional
@@ -33,6 +36,18 @@ public class AuditoriaService {
         Auditoria auditoria = buscarPorId(auditoriaId);
         resposta.setAuditoria(auditoria);
         auditoria.getRespostas().add(resposta);
+        if ("NAO".equals(resposta.getResultado())) {
+            resposta.setGeraNC(true); // Atualiza o flag na resposta
+
+            NaoConformidade nc = new NaoConformidade();
+            nc.setRespostaChecklist(resposta);
+            nc.setClassificacao(ClassificacaoNC.ADVERTENCIA); // Define uma classificação padrão (ou pegue do item)
+            nc.setResponsavel("A Definir"); // Define um responsável padrão
+
+            naoConformidadeService.criar(nc); // Salva a NC
+            resposta.setNaoConformidade(nc);
+        }
+
         return repository.save(auditoria);
     }
 

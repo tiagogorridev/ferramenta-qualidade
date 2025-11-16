@@ -1,5 +1,7 @@
 package com.auditoria.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 
 @Entity
@@ -8,6 +10,7 @@ public class RespostaChecklist {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @JsonBackReference
     @ManyToOne(optional = false)
     @JoinColumn(name = "auditoria_id")
     private Auditoria auditoria;
@@ -24,6 +27,7 @@ public class RespostaChecklist {
     @Column(nullable = false)
     private Boolean geraNC = false;
 
+    @JsonManagedReference("resposta-nc")
     @OneToOne(mappedBy = "respostaChecklist", cascade = CascadeType.ALL)
     private NaoConformidade naoConformidade;
 

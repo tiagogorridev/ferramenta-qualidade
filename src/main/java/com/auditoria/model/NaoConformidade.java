@@ -2,6 +2,8 @@ package com.auditoria.model;
 
 import com.auditoria.model.enums.ClassificacaoNC;
 import com.auditoria.model.enums.StatusNC;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -17,6 +19,7 @@ public class NaoConformidade {
     @Column(nullable = false, unique = true)
     private String codigoControle;
 
+    @JsonBackReference("resposta-nc")
     @OneToOne
     @JoinColumn(name = "resposta_checklist_id")
     private RespostaChecklist respostaChecklist;
@@ -46,6 +49,7 @@ public class NaoConformidade {
     @Column(nullable = false)
     private Integer numeroEscalonamentos = 0;
 
+    @JsonManagedReference("nc-historico")
     @OneToMany(mappedBy = "naoConformidade", cascade = CascadeType.ALL)
     private List<HistoricoEscalonamento> historicoEscalonamentos = new ArrayList<>();
 

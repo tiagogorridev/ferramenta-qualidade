@@ -1,5 +1,6 @@
 package com.auditoria.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -10,6 +11,7 @@ public class HistoricoEscalonamento {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @JsonBackReference("nc-historico")
     @ManyToOne(optional = false)
     @JoinColumn(name = "nao_conformidade_id")
     private NaoConformidade naoConformidade;
