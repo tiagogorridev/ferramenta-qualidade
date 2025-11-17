@@ -31,6 +31,9 @@ public class NaoConformidade {
     @Column(nullable = false)
     private String responsavel;
 
+    @Column(nullable = true)
+    private String emailResponsavel;
+
     @Column(length = 2000)
     private String acaoCorretiva;
 
@@ -172,5 +175,34 @@ public class NaoConformidade {
 
     public void setDataCriacao(LocalDateTime dataCriacao) {
         this.dataCriacao = dataCriacao;
+    }
+
+    public String getNomeProjeto() {
+        if (respostaChecklist != null && respostaChecklist.getAuditoria() != null) {
+            return respostaChecklist.getAuditoria().getNomeProjeto();
+        }
+        return "N/D";
+    }
+
+    public String getItemDescricao() {
+        if (respostaChecklist != null && respostaChecklist.getItemChecklist() != null) {
+            return respostaChecklist.getItemChecklist().getDescricao();
+        }
+        return "N/D";
+    }
+
+    public Integer getItemNumero() {
+        if (respostaChecklist != null && respostaChecklist.getItemChecklist() != null) {
+            return respostaChecklist.getItemChecklist().getNumero();
+        }
+        return 0;
+    }
+
+    public String getEmailResponsavel() {
+        return emailResponsavel;
+    }
+
+    public void setEmailResponsavel(String emailResponsavel) {
+        this.emailResponsavel = emailResponsavel;
     }
 }

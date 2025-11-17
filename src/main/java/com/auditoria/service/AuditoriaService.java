@@ -2,9 +2,12 @@ package com.auditoria.service;
 
 import com.auditoria.model.*;
 import com.auditoria.model.enums.ClassificacaoNC;
+import com.auditoria.model.enums.StatusNC;
 import com.auditoria.repository.AuditoriaRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -28,24 +31,79 @@ public class AuditoriaService {
 
     public Auditoria buscarPorId(Long id) {
         return repository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Auditoria não encontrada"));
+                .orElseThrow(() -> new RuntimeException("Auditoria não encontrada"));
     }
 
     @Transactional
     public Auditoria adicionarResposta(Long auditoriaId, RespostaChecklist resposta) {
         Auditoria auditoria = buscarPorId(auditoriaId);
-        resposta.setAuditoria(auditoria);
-        auditoria.getRespostas().add(resposta);
-        if ("NAO".equals(resposta.getResultado())) {
-            resposta.setGeraNC(true); // Atualiza o flag na resposta
+        
+        RespostaChecklist respostaExistente = null;
+        for (RespostaChecklist r : auditoria.getRespostas()) {
+            if (r.getItemChecklist().getId().equals(resposta.getItemChecklist().getId())) {
+                respostaExistente = r;
+                break;
+            }
+        }
 
-            NaoConformidade nc = new NaoConformidade();
-            nc.setRespostaChecklist(resposta);
-            nc.setClassificacao(ClassificacaoNC.ADVERTENCIA); // Define uma classificação padrão (ou pegue do item)
-            nc.setResponsavel("A Definir"); // Define um responsável padrão
+        if (respostaExistente != null) {
+            respostaExistente.setResultado(resposta.getResultado());
+            respostaExistente.setObservacoes(resposta.getObservacoes());
+            
+            if ("NAO".equals(resposta.getResultado())) {
+                respostaExistente.setGeraNC(true);
+                
+                NaoConformidade ncNova = resposta.getNaoConformidade();
+                NaoConformidade ncAntiga = respostaExistente.getNaoConformidade();
+                
+                if (ncAntiga == null) { 
+                    ncAntiga = new NaoConformidade();
+                }
 
-            naoConformidadeService.criar(nc); // Salva a NC
-            resposta.setNaoConformidade(nc);
+                if (ncNova != null) {
+                    ncAntiga.setClassificacao(ncNova.getClassificacao());
+                    ncAntiga.setAcaoCorretiva(ncNova.getAcaoCorretiva());
+                    ncAntiga.setPrazoResolucao(ncNova.getPrazoResolucao());
+                    ncAntiga.setEmailResponsavel(ncNova.getEmailResponsavel());
+                    
+                    if (ncAntiga.getId() == null) {
+                        ncAntiga.setResponsavel(auditoria.getAuditor());
+                        ncAntiga.setCodigoControle("NC-" + System.currentTimeMillis());
+                        ncAntiga.setStatus(StatusNC.ABERTA);
+                        ncAntiga.setDataSolicitacao(LocalDate.now());
+                    }
+                    
+                    ncAntiga.setRespostaChecklist(respostaExistente);
+                    respostaExistente.setNaoConformidade(ncAntiga);
+                }
+            } else {
+                respostaExistente.setGeraNC(false);
+                if (respostaExistente.getNaoConformidade() != null) {
+                    respostaExistente.setNaoConformidade(null);
+                }
+            }
+            
+        } else {
+            resposta.setAuditoria(auditoria);
+            auditoria.getRespostas().add(resposta);
+            
+            if ("NAO".equals(resposta.getResultado())) {
+                resposta.setGeraNC(true);
+                NaoConformidade nc = resposta.getNaoConformidade();
+                if (nc != null) {
+                    nc.setClassificacao(nc.getClassificacao());
+                    nc.setAcaoCorretiva(nc.getAcaoCorretiva());
+                    nc.setPrazoResolucao(nc.getPrazoResolucao());
+                    nc.setEmailResponsavel(nc.getEmailResponsavel());
+                    
+                    nc.setResponsavel(auditoria.getAuditor());
+                    nc.setCodigoControle("NC-" + System.currentTimeMillis());
+                    nc.setStatus(StatusNC.ABERTA);
+                    nc.setDataSolicitacao(LocalDate.now());
+                    nc.setRespostaChecklist(resposta);
+                    resposta.setNaoConformidade(nc);
+                }
+            }
         }
 
         return repository.save(auditoria);

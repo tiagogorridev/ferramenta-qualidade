@@ -19,14 +19,16 @@ public class NaoConformidadeService {
 
     @Transactional
     public NaoConformidade criar(NaoConformidade nc) {
-        // Gerar código de controle único
-        String codigo = "NC-" + System.currentTimeMillis();
-        nc.setCodigoControle(codigo);
-        
-        // Calcular prazo com base na classificação
-        LocalDate prazo = LocalDate.now()
-            .plusDays(nc.getClassificacao().getDiasResolucao());
-        nc.setPrazoResolucao(prazo);
+        if (nc.getCodigoControle() == null) {
+             String codigo = "NC-" + System.currentTimeMillis();
+             nc.setCodigoControle(codigo);
+        }
+       
+        if (nc.getPrazoResolucao() == null) {
+            LocalDate prazo = LocalDate.now()
+                .plusDays(nc.getClassificacao().getDiasResolucao());
+            nc.setPrazoResolucao(prazo);
+        }
         
         return repository.save(nc);
     }
@@ -58,6 +60,11 @@ public class NaoConformidadeService {
             .orElseThrow(() -> new RuntimeException("NC não encontrada"));
     }
 
+    public NaoConformidade buscarPorIdCompletamente(Long id) {
+        return repository.findByIdCompletamente(id)
+            .orElseThrow(() -> new RuntimeException("NC não encontrada com detalhes completos"));
+    }
+
     @Transactional
     public NaoConformidade atualizarStatus(Long id, StatusNC novoStatus) {
         NaoConformidade nc = buscarPorId(id);
@@ -78,7 +85,6 @@ public class NaoConformidadeService {
     public NaoConformidade escalonar(Long id, String superior, String observacoes) {
         NaoConformidade nc = buscarPorId(id);
         
-        // Criar histórico de escalonamento
         HistoricoEscalonamento historico = new HistoricoEscalonamento();
         historico.setNaoConformidade(nc);
         historico.setSuperiorResponsavel(superior);

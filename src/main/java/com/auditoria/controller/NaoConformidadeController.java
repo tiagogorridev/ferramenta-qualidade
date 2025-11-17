@@ -3,6 +3,7 @@ package com.auditoria.controller;
 import com.auditoria.model.NaoConformidade;
 import com.auditoria.model.enums.StatusNC;
 import com.auditoria.service.NaoConformidadeService;
+import com.auditoria.service.EmailService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -11,12 +12,14 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/nao-conformidades")
-@CrossOrigin(origins = "*")
 public class NaoConformidadeController {
+    
     private final NaoConformidadeService service;
+    private final EmailService emailService;
 
-    public NaoConformidadeController(NaoConformidadeService service) {
+    public NaoConformidadeController(NaoConformidadeService service, EmailService emailService) {
         this.service = service;
+        this.emailService = emailService;
     }
 
     @PostMapping
@@ -74,5 +77,17 @@ public class NaoConformidadeController {
             payload.get("superior"),
             payload.get("observacoes")
         ));
+    }
+
+    @PostMapping("/{id}/enviar-email")
+    public ResponseEntity<Void> enviarEmail(@PathVariable Long id) {
+        try {
+            NaoConformidade nc = service.buscarPorIdCompletamente(id);
+            emailService.enviarEmailDeNaoConformidade(nc);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            System.err.println("Erro no endpoint enviarEmail: " + e.getMessage());
+            return ResponseEntity.status(500).build();
+        }
     }
 }
